@@ -135,6 +135,11 @@ function saveForm(confirmedRecordName, confirmedFinalStatus, deleteOldName, over
 	//else if (result === 'require'){
 	//	gui.alert (form.KEY_LABEL+' is required. Please provide this.');
 	//}
+	else if (result === 'full'){
+		gui.alert('<p>Storage is full. If you are online this should not have happened, please contact '+gui.supportLink+
+		'.</p><p>If you are working offline, you will have to go online to upload saved records first or switch to a different'+
+		' browser/device that you have loaded this form on.</p>', 'Storage Full');
+	}
 	else if (result === 'existing'){
 		message = 'Record with name '+confirmedRecordName+' already exists. Would you like to overwrite existing record? ';
 		choices = {
@@ -145,11 +150,11 @@ function saveForm(confirmedRecordName, confirmedFinalStatus, deleteOldName, over
 		gui.confirm(message, choices);
 	}
 	else if (result === 'forbidden'){
-		gui.alert ('This name is not allowed. Please change it');
+		gui.alert ('This name is not allowed. Please change it', 'Record Name not allowed');
 		gui.feedback ('Form was NOT saved.');
 	}
 	else {
-		gui.feedback('Error occurred. Form was NOT saved.');
+		gui.alert('Error occurred. Form was NOT saved.', 'Save Error');
 	}
 }
 
@@ -315,29 +320,35 @@ function exportData(finalOnly){
 
 /**
  * Function to export or backup data to a file. In Chrome it will get an appropriate file name.
- *
- *	@param {string=}  fileName
- *  @param {boolean=} finalOnly [description]
  */
-function exportToFile(fileName, finalOnly){
+function exportToFile(){
 	"use strict";
-	var i, dataArr, dataStr, bb, blob;
-		//filename="test.xml";//, uriContent, newWindow;
-	finalOnly = finalOnly || true;
-	fileName = fileName || form.getName()+'_data_backup.xml';
-	
-	dataArr = store.getSurveyDataOnlyArr(finalOnly);//store.getSurveyDataXMLStr(finalOnly));
-	//console.debug(data);
-	if (!dataArr || dataArr.length === 0){
-		gui.feedback('No data marked "final" to export.');
-	}
-	else{
-		dataStr = vkbeautify.xml('<exported>'+dataArr.join('')+'</exported>');
-		bb = new BlobBuilder();
-		bb.append(dataStr);
-		blob = bb.getBlob("application/octet-stream; charset=utf-8");
-		saveAs(blob, fileName);
-	}
+	var i, dataArr, dataStr, bb, blob, server,
+		finalOnly = true,
+		fileName = form.getName()+'_data_backup.xml';
+
+	gui.confirm({
+		msg: 'Records are stored inside the browser until they are submitted (even if you turn off '+
+			'your computer or go offline). <br/><br/>As a backup, to save all queued records to a file, click export.',
+		heading: 'Export queued records'
+		},{
+		posButton: 'Export',
+		negButton: 'Cancel',
+		posAction: function(){
+			dataArr = store.getSurveyDataOnlyArr(finalOnly);//store.getSurveyDataXMLStr(finalOnly));
+			if (!dataArr || dataArr.length === 0){
+				gui.alert('No records in queue. The records may have been successfully submitted already.');
+			}
+			else{
+				server = settings['serverURL'] || '';
+				dataStr = vkbeautify.xml('<exported server="'+server+'">'+dataArr.join('')+'</exported>');
+				bb = new BlobBuilder();
+				bb.append(dataStr);
+				blob = bb.getBlob("application/octet-stream; charset=utf-8");
+				saveAs(blob, fileName);
+			}
+		}
+	});
 }
 
 //Extend GUI
@@ -346,7 +357,6 @@ GUI.prototype.setCustomEventHandlers = function(){
 	"use strict";
 	var settingsForm, that = this;
 	
-	// survey-form controls
 	$('button#save-form')
 		.click(function(){
 			form.validateForm();
@@ -383,44 +393,22 @@ GUI.prototype.setCustomEventHandlers = function(){
 		}
 	});
 
-	$('#drawer-export').click(function(){
+	$('.records').on('click', function(){
 		exportToFile();
-		return false;
-	});
-	$('.drawer.left .handle.right').click(function(){
-		var $drawer = $(this).parent('.drawer');
-		console.debug('clicked handle');
-		$drawer.toggleClass('closed');
 	});
 
 	$('#form-controls button').toLargestWidth();
-
-	$(document)
-		.on('click', '#records-saved li:not(.no-click)', function(event){
-			event.preventDefault();
-			var name = /** @type {string} */$(this).find('.name').text();
-			loadForm(name);
-			$(this).siblings().removeClass('ui-state-active');
-			$(this).addClass('ui-state-active');
-		})
-		.on('mouseenter', '#records-saved li:not(.no-click)', function(){
-			$(this).addClass('ui-state-hover');
-		})
-		.on('mouseleave', '#records-saved li:not(.no-click)', function(){
-			$(this).removeClass('ui-state-hover');
-		});
 
 	$(document).on('save delete', 'form.jr', function(e, formList){
 		console.debug('save or delete event detected with new formlist: '+formList);
 		that.updateRecordList(JSON.parse(formList));
 	});
 
+	/*
 	$(document).on('setsettings', function(e, settings){
-		//console.debug('settingschange detected, GUI will be updated with settings:');
-		//console.debug(settings);
 		that.setSettings(settings);
 	});
-
+	*/
 	// handlers for application settings [settings page]
 	//this.pages.get('settings').on('change', 'input', function(){
 	//	var name =  /** @type {string} */  $(this).attr('name');
@@ -469,11 +457,11 @@ GUI.prototype.updateRecordList = function(recordList, $page) {
 			$li.find('.name').text(name); // encodes string to html
 			$list.append($li);
 		}
-		$('#queue-length').text(recordList.length);
+		$('.queue-length').text(recordList.length).parent().show();
 	}
 	else{
 		$('<li class="no-click">no locally saved records found</li>').appendTo($list);
-		$('#queue-length').text('0');
+		$('.queue-length').text('0').parent().hide();
 	}
 	// update status counters
 	$page.find('#records-draft-qty').text(draftFormsQty);

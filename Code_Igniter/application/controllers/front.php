@@ -21,43 +21,58 @@ class Front extends CI_Controller {
 	function __construct()
 	{
 		parent::__construct();
-		$this->load->model('Survey_model','',TRUE);
+		$this->load->helper(array('subdomain', 'url'));
+		$subdomain = get_subdomain();
+		log_message('debug', 'Front controller started');
+		if (!empty($subdomain))
+		{
+			log_message('debug', 'front controller loaded with subdomain: '.$subdomain.' -> sending 404');
+			show_404();
+		}
 	}
 
 	public function index()
 	{
-		$this->load->helper(array('url'));
-
-		$default_scripts = array
+		$default_library_scripts = array
 		(
 			'/libraries/jquery.min.js',
 			'/libraries/bootstrap/js/bootstrap.min.js',
 			'/libraries/modernizr.min.js'
 		);
+		$default_main_scripts = array
+		(
+			'/js-source/helpers.js',
+			'/js-source/gui.js',
+			'/js-source/connection.js',
+			'/js-source/front.js'
+		);
+
 		$default_stylesheets = array
 		(
-			//array( 'href' => '/libraries/bootstrap/css/bootstrap.min.css', 'media' => 'screen'),
 			array( 'href' => '/css/styles.css', 'media' => 'screen'),
+			array( 'href' => '/css/front.css', 'media' => 'screen'),
 			array( 'href' => '/css/print.css', 'media' => 'print')
 		);
 		$data = array(
 			'offline'=>FALSE, 
 			'title_component'=>'', 
-			'stylesheets' => $default_stylesheets,
-			'num_surveys' => $this->Survey_model->number_surveys()
+			'stylesheets' => $default_stylesheets//,
+			//'num_surveys' => $this->Survey_model->number_surveys()
 		);
 
 		if (ENVIRONMENT === 'production')
 		{
-			$data['scripts'] = array_merge($default_scripts, array(
+			$data['scripts'] = array(
+				'/libraries/libraries-all-min.js',
 				'/js-min/front-all-min.js'
-			));
+			);
 		}
 		else
 		{
-			$data['scripts'] = array_merge($default_scripts, array(
-				'/js-source/common.js'
-			));
+			$data['scripts'] = array_merge(
+				$default_library_scripts,
+				$default_main_scripts
+			);
 		}
 
 		$integrated = $this->config->item('integrated');
@@ -75,7 +90,14 @@ class Front extends CI_Controller {
 
 	public function get_number_launched()
 	{
-		echo (int) $this->Survey_model->number_surveys();
+		$this->load->model('Survey_model','',TRUE);
+		echo $this->Survey_model->number_surveys();
+	}
+
+	private function _get_number_launched()
+	{
+		$this->load->model('Survey_model','',TRUE);
+		return (int) $this->Survey_model->number_surveys();
 	}
 
 	public function get_number_launched_everywhere()
@@ -90,7 +112,7 @@ class Front extends CI_Controller {
 		{
 			$this->load->helper('subdomain');
 			$number = (full_base_url() == $url.'/') ? 
-				$this->get_number_launched : file_get_contents($url.'/front/get_number_launched');
+				$this->_get_number_launched() : file_get_contents($url.'/front/get_number_launched');
 			if (!empty($number))
 			{
 				$result[$name] = (int) $number;

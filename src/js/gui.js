@@ -53,6 +53,7 @@ function setSettings(){
 			{q: 'debug', s: 'debug'},
 			{q: 'touch', s: 'touch'},
 			{q: 'server', s: 'serverURL'},
+			{q: 'form', s:'formURL'},
 			{q: 'id', s: 'formId'}
 		];
 	for (i=0 ; i< settingsMap.length ; i++){
@@ -69,6 +70,7 @@ function setSettings(){
  */
 function GUI(){
 	"use strict";
+	this.supportLink = '<a href="mailto:'+settings['supportEmail']+'">'+settings['supportEmail']+'</a>';
 }
 
 /**
@@ -171,19 +173,13 @@ GUI.prototype.setEventHandlers = function(){
 	$('#page, #feedback-bar').on('change', function(){
 		that.positionPageAndBar();
 	});
-			
-	// more info on connection status after clicking icon
-	//$('header #status-connection')
-	//	.click(function(event){
-	//		that.feedback($(this).attr('title'));
-	//		event.stopPropagation(); //prevent closing of simultaneously shown page when clicking icon
-	//		//event.cancelBubble(); //IE
-	//	});
-	
-	//move this when feedback bar is shown?
-	//$(window).resize(function(){
-	//	$('#container').css('top', $('header').outerHeight());
-	//});
+
+	$(document).on('xpatherror', function(ev, error){
+		var email = settings['supportEmail'];
+		that.alert('A formula evaluation error occurred. Please contact '+
+			'<a href="mailto:'+ email +'?subject=xpath errors for: '+location.href+'&body='+error+'" target="_blank" >'+email+'</a>'+
+			' with this error:<ul class="error-list"><li>'+error+'</li></ul>', 'Formula Error');
+	});
 };
 	
 GUI.prototype.nav = {
@@ -192,7 +188,10 @@ GUI.prototype.nav = {
 		$('article.page').each(function(){
 			var display, title='', id, link;
 			id=$(this).attr('id');
-			if ($(this).attr('data-display')){
+			if ($(this).attr('data-display-icon')){
+				display = '<img src="/images/'+$(this).attr('data-display-icon')+'" alt="menu-icon" />';
+			}
+			else if ($(this).attr('data-display')){
 				display = $(this).attr('data-display');
 			}
 			else display = id;
@@ -233,9 +232,7 @@ GUI.prototype.pages = {
 	 */
 	get : function(name){
 		var $page = this.$pages.find('article[id="'+name+'"]');
-
 		$page = ($page.length > 0) ? $page : $('article[id="'+name+'"]');
-		
 		return $page ;
 	},
 		
@@ -255,7 +252,8 @@ GUI.prototype.pages = {
 	 */
 	open : function(pg){
 		var $page,
-			$header = $('header');
+			$header = $('header'),
+			that = this;
 		if (this.isShowing(pg)){
 			return;
 		}
@@ -273,25 +271,35 @@ GUI.prototype.pages = {
 
 		$('#page .content').prepend($page.show()).trigger('change');
 		$('#page').show();
+		$('.overlay').show();
 		
-		$(window).bind('resize.pageEvents', function(){
+		$(window).on('resize.pageEvents', function(){
 			$('#page').trigger('change');
 		});
+		setTimeout(function(){
+			$(window).on('click.pageEvents', function(event){
+				console.log($(event.target).prop('nodeName'));
+				if ($(event.target).parents('.btn-toolbar, label, fieldset').length === 0){
+					that.close();
+				}
+				return true;
+			});
+		}, 1000);
 	},
 	
 	/**
 	 * Closes the currently shown page
 	 */
 	close : function(){
-		var $page = $('#page .page').detach();//.length > 0) ? $('#page .page').detach() : [];
+		var $page = ($('#page .page').length > 0) ? $('#page .page').detach() : [];
 		if ($page.length > 0){
 			this.$pages.append($page);
 			$('#page').trigger('change');
 			$('nav ul li').removeClass('active');
 			//$('#overlay').hide();
-			$('#overlay, header').unbind('.pageEvents');
-			$(window).unbind('.pageEvents');
+			$(window).off('.pageEvents');
 		}
+		$('.overlay').hide();
 	}
 };
 
@@ -531,7 +539,7 @@ GUI.prototype.showLoadErrors = function(loadErrors, advice){
 	this.alert('<p>Error'+s+' occured during the loading of this form. '+advice+'</p><br/><p>'+
 		'Please contact <a href="mailto:'+ email +
 		'?subject=loading errors for: '+location.href+'&body='+errorStringEmail+'" target="_blank" >'+email+'</a>'+
-		' with the link to this page and the error message'+s+' below:</p><br/>'+ errorStringHTML, 'Loading Error'+s);
+		' with the link to this page and the error message'+s+' below:</p>'+ errorStringHTML, 'Loading Error'+s);
 };
 
 /**
@@ -542,7 +550,7 @@ GUI.prototype.showLoadErrors = function(loadErrors, advice){
 GUI.prototype.updateStatus = {
 	connection : function(online) {
 		"use strict";
-		console.log('updating online status in menu bar to:', online);
+		/*console.log('updating online status in menu bar to:', online);
 		if (online === true) {
 			$('header #status-connection').removeClass().addClass('ui-icon ui-icon-signal-diag')
 				.attr('title', 'It appears there is currently an Internet connection available.');
@@ -555,7 +563,7 @@ GUI.prototype.updateStatus = {
 		}
 		else{
 			$('.drawer #status').removeClass('offline').addClass('waiting').text('Waiting. ');
-		}
+		}*/
 	},
 	edit : function(editing){
 		"use strict";
@@ -621,28 +629,6 @@ GUI.prototype.positionPageAndBar = function(){
 
 	$feedback.css('top', fTop);
 	$page.css('top', pTop);
- 
-	/*
-	if ($feedback.find('p').length > 0){
-		feedbackTop = ($header.css('position') === 'fixed') ? $header.outerHeight() : 0; // shows feedback-bar
-		if (this.pages.isShowing()){
-			pageTop = $header.outerHeight() + $feedback.outerHeight(); // shows page
-		}
-		else{
-			pageTop = 0 - $page.outerHeight(); // hides page
-		}
-	}
-	else{
-		feedbackTop = ($header.css('position') === 'fixed') ? $header.outerHeight() - $feedback.outerHeight() : 0 - $feedback.outerHeight();
-		if (this.pages.isShowing()){
-			pageTop = $header.outerHeight(); // shows page
-		}
-		else{
-			pageTop = 0 - $page.outerHeight();
-		}
-	}
-	$feedback.css('top', feedbackTop);
-	$page.css('top', pageTop);*/
 };
 
 /**
@@ -941,142 +927,5 @@ Print.prototype.addPageBreaks = function(){
 	//remove the possible-breaks
 	return $('.possible-break').remove();
 };
-	
-
-/**
- * Pads a string with prefixed zeros until the requested string length is achieved.
- * @param  {number} digits [description]
- * @return {String|string}        [description]
- */
-String.prototype.pad = function(digits){
-	var x = this;
-	while (x.length < digits){
-		x = '0'+x;
-	}
-	return x;
-};
-
-(function($){
-	"use strict";
-	// give a set of elements the same (longest) width
-	$.fn.toLargestWidth = function(){
-		var largestWidth = 0;
-		return this.each(function(){
-			if ($(this).width() > largestWidth) {
-				largestWidth = $(this).width();
-			}
-		}).each(function(){
-			$(this).width(largestWidth);
-		});
-	};
-
-	$.fn.toSmallestWidth = function(){
-		var smallestWidth = 2000;
-		return this.each(function(){
-			if ($(this).width() < smallestWidth) {
-				smallestWidth = $(this).width();
-			}
-		}).each(function(){
-			$(this).width(smallestWidth);
-		});
-	};
-	
-	//reverse jQuery collection
-	$.fn.reverse = [].reverse;
-	
-	// Alphanumeric plugin for form input elements see http://www.itgroup.com.ph/alphanumeric/
-	$.fn.alphanumeric = function(p) {
-
-		p = $.extend({
-			ichars: "!@#$%^&*()+=[]\\\';,/{}|\":<>?~`.- ",
-			nchars: "",
-			allow: ""
-		}, p);
-
-		return this.each(function(){
-
-			if (p.nocaps) p.nchars += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-			if (p.allcaps) p.nchars += "abcdefghijklmnopqrstuvwxyz";
-			
-			var s = p.allow.split('');
-			for (var i=0;i<s.length;i++) if (p.ichars.indexOf(s[i]) != -1) s[i] = "\\" + s[i];
-			p.allow = s.join('|');
-			
-			var reg = new RegExp(p.allow,'gi');
-			var ch = p.ichars + p.nchars;
-			ch = ch.replace(reg,'');
-
-			$(this).keypress
-				(
-					function (e)
-						{
-							var k;
-							if (!e.charCode) k = String.fromCharCode(e.which);
-								else k = String.fromCharCode(e.charCode);
-								
-							if (ch.indexOf(k) != -1) e.preventDefault();
-							if (e.ctrlKey&&k=='v') e.preventDefault();
-							
-						}
-						
-				);
-				
-			$(this).bind('contextmenu',function () {return false;});
-		});
-	};
-
-	$.fn.numeric = function(p) {
-	
-		var az = "abcdefghijklmnopqrstuvwxyz";
-		az += az.toUpperCase();
-
-		p = $.extend({
-			nchars: az
-		}, p);
-
-		return this.each (function()
-			{
-				$(this).alphanumeric(p);
-			}
-		);
-			
-	};
-	
-	$.fn.alpha = function(p) {
-
-		var nm = "1234567890";
-
-		p = $.extend({
-			nchars: nm
-		}, p);
-
-		return this.each (function()
-			{
-				$(this).alphanumeric(p);
-			}
-		);
-			
-	};
-
-	// plugin to select the first word(s) of a string and capitalize it
-	$.fn.capitalizeStart = function (numWords) {
-		if(!numWords){
-			numWords = 1;
-		}
-		var node = this.contents().filter(function () {
-			return this.nodeType == 3;
-			}).first(),
-			text = node.text(),
-			first = text.split(" ", numWords).join(" ");
-
-		if (!node.length)
-			return;
-	
-		node[0].nodeValue = text.slice(first.length);
-		node.before('<span class="capitalize">' + first + '</span>');
-	};
-
-
-})(jQuery);
 
 

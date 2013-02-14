@@ -51,9 +51,9 @@ body{
       margin: 0;}
     .form-header{
       top: 0;
+      border-bottom: 1px solid $groupline;
       .form-language-selector > span{
-        display: none; }
-      border-bottom: 1px solid $groupline;}
+        display: none; } }
     #page .close{
       font-size: 2em; } } }
 
@@ -91,12 +91,18 @@ h2, h3, h4 {
   color: $title;
   text-align: center;}
 
+.preview{
+  color: #aaaaaa;
+  margin: 1.5em 0 -1em 0;
+}
+
 progress{
   display: block;
   margin: 10px auto;}
 
 .alert{
   .error-list{
+    margin-top: 1em;
     font-size: 0.8em;
     li{
       line-height: 1.4em; } }
@@ -111,69 +117,30 @@ progress{
     .component{
       font-size: 0.4em;} } 
   nav{
-    float:right; } }
-  
+    float:right;
+    a{
+      text-align: right; }
+    img{
+      width: 1em;
+      height: 1em; } } }
+
+.overlay{
+  position:absolute;
+  top:0;
+  left:0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  background: black;
+  opacity: 0.8;
+  display: none;
+}
+
 .paper{
 	background-color: #fff;
 	border-radius: 7px;
 	border: 7px solid $content_border;}
 
-.drawer{
-  position: fixed;
-  z-index: 15;
-  border: 1px solid $drawer_border;
-  border-radius: 0 4px 4px 0;
-  -moz-transition: margin 0.8s ease-out;
-  -webkit-transition: margin 0.8s ease-out;
-  transition: margin 0.8s ease-out;
-  font-size: 1.1em;
-  &.left{
-    bottom: 20%;
-    left: 0;
-    width: $drawer-width;
-    height: 80px;}
-  &.closed{
-    margin-left: $tab-width+2px-$drawer-width;}
-  .content{
-    padding: 20px;  }
-  .handle{
-    z-index: 101;
-    width: $tab-width;
-    height: 100%;
-    border-radius: 0 4px 4px 0;
-    &.hasrecords{ }
-    &.right{
-      float: right;
-      border-left: 3px ridge #ccc; } }
-  #status{
-    display: inline-block;
-    &.offline{
-      color: red;}
-    &.waiting{
-      color: orange;} }
-  .queue-length{ }
-  #status-offline-launch{
-    display: block; }
-  button#drawer-export{
-    display: block; } }
- 
-/*#branding{
-  position: fixed;
-  z-index: -5;
-  width: 120px;
-  bottom: 0px;
-  right: 0px;
-  padding: 15px;
-  text-align: center;
-  line-height: 1.3em;
-  color: #666;
-  font-size: 1.3em;
-  a:link, a:hover, a:visited{
-    text-decoration: none;
-    color: #666;}
-  a:hover{
-    color: #444;} }
-*/
 .main {
   margin: 100px auto 60px auto;
   position: relative;
@@ -205,46 +172,49 @@ label#data-template-show {
 
 #upload{
   form{
-    position:relative;
+    //position:relative;
+    margin-top: 2em;
     text-align: center;
-    height: 150px;
     #input-switcher{
-      position: absolute;
-      top: 30px;
-      left: 275px;}
-    label {
-      text-align: center;
-      margin-top: 20px;
-      padding: 0 5%;
-      display: block;
-      z-index: 0;
-      width: 80%; }
-    label>span {
-      display: block; }
-    .fakefileinput span{
-      vertical-align: middle;}
-    input, .fakefileinput {
-      position: absolute;
-      top: 50px;
-      left: 0px;
-      display: block;
-      width: 100%%;
-      margin: 10px 0 10px 0;
-      min-height: 30px;
-      text-align: center; }
-    input[type=file] {
-      z-index: 5;
-      opacity: 0; }
+      margin-top: 5em;
+      text-align: center;}
+    fieldset{
+      position:relative;
+      height: 70px;
+      label {
+        text-align: center;
+        margin-top: 20px;
+        padding: 0 5%;
+        display: block;
+        z-index: 0;
+        width: 80%; }
+      label>span {
+        display: block; }
+      .fakefileinput span{
+        vertical-align: middle;}
+      input, .fakefileinput {
+        position: absolute;
+        box-sizing: border-box;
+        top: 0;
+        left: 0px;
+        display: block;
+        width: 100%;
+        margin: 10px 0 10px 0;
+        height: 100%;
+        text-align: center;
+        span{
+          line-height: 60px;} }
+      input[type=file] {
+        z-index: 5;
+        opacity: 0; } }
     .hurry{
       font-size: .8em;
-      margin-top: 180px;} }
+      margin: 5em 0 3em 0;} }
   #form-list{
-    margin-top: 20px;
+    margin-top: 4em;
     ul{
       width: 100%;
-      margin: 4px;
-      list-style-type: none;
-       } } }  
+      list-style-type: none; } } }  
 
 .formlist{
   ul{
@@ -296,7 +266,7 @@ label#data-template-show {
 .popover{
   font-size: $baseFontSize !important;
   color: black !important;
-}
+  min-width: 30%; }
 
 .page-break{
   display: none; }
@@ -351,10 +321,12 @@ label#data-template-show {
   z-index: 12;
   top: -320px;
   width: 100%;
-  background-color: $pagecolor;
-  color: $shadow;
+  background-color: white;
+  //background-color: $pagecolor;
+  //color: $shadow;
   border: none;
   border-top: $border;
+  border-bottom: $border;
   #settings{
     .btn-toolbar{
       margin-top: 70px; } }
@@ -384,8 +356,8 @@ label#data-template-show {
         margin-bottom: 0; } } }
   .close {
     position: absolute;
-    right: 20px;
-    bottom: 20px;
+    right: 0;
+    bottom: 0;
     opacity: 1;
     text-shadow: none; }
   .column {
@@ -416,6 +388,26 @@ label#data-template-show {
       &:hover{
         text-decoration: none;
         opacity: 0.8;} }
+
+    .records{
+      $size: 20px;
+      display: none;
+      position: relative;
+      bottom: 4px;
+      margin-left: -10px;
+      background-color: #c9c9c9;
+      border: 1px solid $groupline;
+      height: $size;
+      min-width: $size;
+      border-radius: $size/2; }
+    .queue-length{
+      color: #ffffff;
+      text-align: center;
+      padding: 0 7px;
+      &.submitting{
+        color: #ce4f07; }
+      &:hover{
+        color: green; } }
     .print{
       //border: 1px solid black;
       background: none;
@@ -536,8 +528,12 @@ html.touch{
         margin: 0;
         padding: 0.3em 0 0.15em 0;
         font-weight: normal; 
-        &:hover{
-          background-color: lighten($title, 48%);} } }
+        &:not(.btn):hover{
+          background-color: lighten($title, 48%);}
+        &.btn{
+          width: 100%;
+          text-align: left;
+          margin-bottom: .4em; } } }
   label, legend, .trigger {
     font-size: 1em; }
   img, audio, video{
@@ -545,7 +541,6 @@ html.touch{
     max-height: 300px;
     max-width: 70%;}
   input:not([type="radio"]):not([type="checkbox"]), textarea, select{
-    //float: left;
     display: inline-block;
     margin: 8px 0 0 0;
   }

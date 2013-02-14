@@ -1,9 +1,6 @@
 <? require 'elements/html_start.php' ?>
 
 </head>
-
-<? if (ENVIRONMENT === 'production'){include 'elements/tracking.php';}?>
-
 <body>
 
 <? 	
@@ -28,28 +25,23 @@
 			<article id="upload" class="tab-pane paper">
 				<h3 class="ui-widget-header ui-corner-all">JavaRosa XML Form to Load</h3>
 				<form id="upload-form" enctype="multipart/form-data" accept-charset="utf-8">
-					<progress style="display: none;"></progress><br />
 					<div id="input-switcher" class="btn-group" data-toggle="buttons-radio">
 						<a type="button" href="#" id="xml_file" class="btn btn-mini">file</a> 
 						<a type="button" href="#" id="server_url" class="btn btn-mini">url</a>
 					</div>
-					<label>
-						<!--<span>Select XML Form File (or drag it)</span>-->
-						<div class="fakefileinput uneditable-input"><span>Select XML Form File or drag it here</span></div>
-						<div><input type="file" name="xml_file" /></div>
-					</label>
-					<label>
-						<!--<span>Enter full web address to server</span>-->
-						<!-- add hint: Note that uploading a file is a good way to test forms, but in order to launch the
-						survey for data entry in Enketo, it has to be provided as a url-->
-						<input type="text" name="server_url" placeholder="Enter full web address to server, e.g. http://formhub.org/formhub_u"/>
-					</label>
-					<!--<input type="hidden" name="xml_url"/>-->
-					<input type="hidden" name="form_id"/>
-					<!--<input type="submit">Transform and Test!</button>-->
-					
+					<fieldset>
+						<label>
+							<div class="fakefileinput uneditable-input"><span>Select XML Form File or drag it here</span></div>
+							<div><input type="file" name="xml_file" /></div>
+						</label>
+						<label>
+							<input type="text" name="server_url" placeholder="Enter full web address to server, e.g. http://formhub.org/formhub_u"/>
+						</label>
+						<input type="hidden" name="form_id"/>
+					</fieldset>
 					<div class="hurry"><a href="formtester?server=http%3A%2F%2Fformhub.org%2Fformhub_u" title="Check forms on http://formhub.org/formhub_u">Just want to see how it works?</a></div>
 				</form>
+				<progress style="display: none;"></progress>
 				<div id="form-list" class="formlist">
 					<ul>
 					</ul>
@@ -143,45 +135,18 @@
 		</div>
 	</div>
 
-	<article id="about" data-title="about this application" class="page">
+	<article id="about" data-display="?" class="page">
+		<h3>What is this?</h3>
 		<p>
-		    Enketo facilitates data collection and data entry using an open-source form format (OpenRosa). This free and open-source application is developed by <a target="_blank" href="http://www.aidwebsolutions.com" title="go to Aid Web Solutions web site"
-		    target=_blank> Aid Web Solutions</a> to demonstrate the potential of offline capable
-		    web applications to cope with intermittent Internet connections. 
-		</p>
+			This form tester is meant for survey administrators to test their forms before deploying them. When all is working well, the survey can be launched on a unique web address via the <a href="/forms">forms app</a>. 
+		<? if (!$integrated): ?>
+		 	<? require_once 'elements/about_standalone_snippet.php';?>
+		<? else: ?>
+		<h3>Where can I get help?</h3>
 		<p>
-		   The Enketo form tester is meant for survey administrators to test forms. When all is working well, the survey can be launched on a unique web address via the formlist. A launched survey is offline-capable. The following are the main items left to do for full JavaRosa compatibility:
-		</p> 
-		<div class="clearfix">   
-		    <div class="column">
-			    <ul style="line-height: 1.5em">
-			    	<li>support for authentication</li>
-			    	<li>support for file uploads (images, video, audio)</li>
-			    	<li>support for calculations on dates</li>
-			    </ul>
-			</div>
-			<!--<div class="column ui-corner-all ui-helper-clearfix">
-				Use the links below to relaunch this app in a developer mode:<br/><br/>
-				<a style="display: block; text-align: center;" href="?debug=true" title="click to relaunch">debug mode</a><br/>
-				<a style="display: block; text-align: center;" href="?source=true" title="click to relaunch with an add 'source' tab that shows html5 source of the transformed form">source-view mode</a><br/>
-				<a style="display: block; text-align: center;" href="#" title="click to relaunch">normal mode</a>
-			</div>-->
-		</div>
-		<!--<p>
-		 	Note that for standard XPath 1.0 functions, Enketo does not deviate from the XPath specification. This means that existing forms may not work properly until they are corrected. This is particularly relevant to usages described in item 1 of <a target="_blank" href="https://bitbucket.org/javarosa/javarosa/wiki/XFormDeviations">this document</a>.
-		</p>-->
+			Please use the <a href="https://groups.google.com/forum/?fromgroups#!forum/formhub-users">users forum</a> or contact <a href="mailto:<?= $this->config->item('support_email') ?>"><?= $this->config->item('support_email') ?></a> for any comments, questions or bug reports.
 		<p>
-			More information is available <a target="_blank" href="http://blog.aidwebsolutions.com/tag/enketo/">here</a>. 
-		</p>
-		<p>
-			Feedback is very welcome at <a href="mailto:<?= $this->config->item('support_email') ?>"><?= $this->config->item('support_email') ?></a>. If you discover a bug, it would be great if you could send the xml form to help troubleshoot.
-			<!--<a href="http://aidwebsolutions.com/blog" title="go to Aid Web Solutions blog post on Rapaide" target=_blank>
-			 More information</a> about the app.-->
-		</p>
-		<!-- working:
-			translations of labels/constraintMsgs/hints, constraints, relevant(branching), repeats (full), triggers, appearance(partial) 
-		--> 
-
+		<? endif; ?>
 	</article>
 
 	<? require 'elements/footer++.php' ?>

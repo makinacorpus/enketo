@@ -864,7 +864,7 @@ function Form (formSelector, dataStr, dataStrToEdit){
 	 * @return {?(number|string|boolean|jQuery)}            [description]
 	 */
 	DataXML.prototype.evaluate = function(expr, resTypeStr, selector, index){
-		var i, j, context, contextDoc, instances, id, resTypeNum, resultTypes, result, $result, attr, 
+		var i, j, error, context, contextDoc, instances, id, resTypeNum, resultTypes, result, $result, attr, 
 			$contextWrapNodes, $repParents;
 		console.debug('evaluating expr: '+expr+' with context selector: '+selector+', 0-based index: '+
 			index+' and result type: '+resTypeStr);
@@ -969,7 +969,10 @@ function Form (formSelector, dataStr, dataStrToEdit){
 			return result[resultTypes[resTypeNum][2]];
 		}
 		catch(e){
-			console.error('Error occurred trying to evaluate: '+expr+', message: '+e.message);
+			error = 'Error occurred trying to evaluate: '+expr+', message: '+e.message;
+			console.error(error);
+			$(document).trigger('xpatherror', error);
+			loadErrors.push(error);
 			return null;
 		}
 	};
@@ -1023,14 +1026,22 @@ function Form (formSelector, dataStr, dataStrToEdit){
 		/*
 			legends are a royal pain-in-the-ass, but semantically correct to use. To restoring sanity, the least
 			ugly solution that works regardless of the legend text + hint length (and showing a nice error background)
-			is to use a double fieldset (in hindsight, I should have used <section>s for each question)
+			is to use a double fieldset (in hindsight, I shouldn't have been so stingy with my markup and 
+			just have just used <section>s for each question)
 		 */
 		$form.find('legend').parent('fieldset').each(function(){
 			var $elem = $(this),
+				$parent = $elem.parent(),
 				$prev = $elem.prev(),
 				$wrap = $('<fieldset class="restoring-sanity-to-legends"></fieldset>');
 			$elem.detach().appendTo($wrap);
-			$prev.after($wrap);
+			if ($prev.length > 0) {
+				$prev.after($wrap);
+			}
+			//if it's the first element in a group and a title is missing
+			else{
+				$parent.prepend($wrap);
+			}
 		});
 		/*
 			Groups of radiobuttons need to have the same name. The name refers to the path of the instance node.
@@ -1057,8 +1068,6 @@ function Form (formSelector, dataStr, dataStrToEdit){
 		this.preloads.init(); //after event handlers!
 		this.setLangs();
 		this.editStatus.set(false);
-		//setTimeout(function(){$form.fixLegends();}, 500);
-
 	};
 
 	/**
@@ -1113,7 +1122,8 @@ function Form (formSelector, dataStr, dataStrToEdit){
 				console.error(' total number of branches differs between XML form and HTML form (not a problem if caused by obsolete bindings in xml form)');
 			}
 			if ( total.jrConstraint != ( total.hConstraintNotRadioCheck + total.hConstraintRadioCheck)){
-				console.error(' total numberRepeats of constraints differs between XML form and HTML form (not a problem if caused by obsolete bindings in xml form).'+
+				console.error(' total number of constraints differs between XML form ('+total.jrConstraint+') and HTML form ('+
+					(total.hConstraintNotRadioCheck + total.hConstraintRadioCheck)+')(not a problem if caused by obsolete bindings in xml form).'+
 					' Note that constraints on &lt;trigger&gt; elements are ignored in the transformation and could cause this error too.');
 			}
 			if ( total.jrCalculate != total.hCalculate ){
@@ -1879,15 +1889,18 @@ function Form (formSelector, dataStr, dataStrToEdit){
 			*/
 			this.repeat = ($group) ? true : false;
 			this.$group = $group || $form;
+			this.readonlyWidget(); //call before other widgets
+			this.pageBreakWidget();
 			if (!Modernizr.touch){
 				this.dateWidget();
 				this.timeWidget();
 				this.dateTimeWidget();
 				this.selectWidget();
 			}
+			else{
+				this.touchRadioCheckWidget();
+			}
 			this.geopointWidget();
-			this.pageBreakWidget();
-			this.readonlyWidget();
 			this.tableWidget();
 			this.spinnerWidget();
 			this.sliderWidget();	
@@ -1910,6 +1923,13 @@ function Form (formSelector, dataStr, dataStrToEdit){
 				});
 				//defaults
 				$form.find('input[type="radio"]:checked').parent('label').attr('data-checked', 'true');
+			}
+		},
+		touchRadioCheckWidget : function(){
+			if (!this.repeat){
+				$form.find('fieldset:not(.jr-appearance-compact, .jr-appearance-quickcompact, .jr-appearance-label, .jr-appearance-list-nolabel )')
+					.children('label')
+					.children('input[type="radio"], input[type="checkbox"]').parent('label').addClass('btn');
 			}
 		},
 		dateWidget : function(){
@@ -2068,9 +2088,10 @@ function Form (formSelector, dataStr, dataStrToEdit){
 					var html = $(this).html(),
 						relevant = $(this).find('input').attr('data-relevant'),
 						name = 'name="'+$(this).find('input').attr('name')+'"',
-						attributes = (typeof relevant !== 'undefined') ? 'data-relevant="'+relevant+'" '+name : name;
-					$('<fieldset class="trigger" '+attributes+'></fieldset>') //ui-corner-all
-						.insertBefore($(this)).append(html).find('input').remove(); 
+						attributes = (typeof relevant !== 'undefined') ? 'data-relevant="'+relevant+'" '+name : name,
+						value = $(this).find('input, select, textarea').val();
+					$('<fieldset class="trigger" '+attributes+'></fieldset>')
+						.insertBefore($(this)).append(html).append('<div class="note-value">'+value+'</div>').find('input').remove(); 
 					$(this).remove();
 				});
 			}
@@ -2081,7 +2102,7 @@ function Form (formSelector, dataStr, dataStrToEdit){
 				//this with a bit of a delay..
 				setTimeout(function(){
 					$form.find('.jr-appearance-field-list .jr-appearance-list-nolabel, .jr-appearance-field-list .jr-appearance-label')
-						.parent().parent('.jr-group').each(function(){
+						.parent().parent('.jr-appearance-field-list').each(function(){
 							$(this).find('.jr-appearance-label label>img').parent().toSmallestWidth();
 							$(this).find('label').toLargestWidth();
 							$(this).find('legend').toLargestWidth();
@@ -2229,9 +2250,9 @@ function Form (formSelector, dataStr, dataStrToEdit){
 			//console.debug('date preloader called with current val: '+o.curVal);
 			if (o.curVal.length === 0){
 				today = new Date(data.evaluate('today()', 'string'));
-				year = today.getUTCFullYear().toString().pad(4);
-				month = (today.getUTCMonth() + 1).toString().pad(2);
-				day = today.getUTCDate().toString().pad(2);
+				year = today.getFullYear().toString().pad(4);
+				month = (today.getMonth() + 1).toString().pad(2);
+				day = today.getDate().toString().pad(2);
 
 				return year+'-'+month+'-'+day;
 			}

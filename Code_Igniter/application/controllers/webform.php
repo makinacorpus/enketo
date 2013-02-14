@@ -26,7 +26,7 @@ class Webform extends CI_Controller {
 
 		$this->load->helper(array('subdomain','url'));
 		$this->load->model('Survey_model','',TRUE);
-		
+
 		$this->default_library_scripts = array
 		(
 			'/libraries/jquery.min.js',
@@ -42,7 +42,8 @@ class Webform extends CI_Controller {
 		);
 		$this->default_main_scripts = array
 		(
-			'/js-source/common.js',
+			'/js-source/helpers.js',
+			'/js-source/gui.js',
 			'/js-source/form.js',
 			'/js-source/widgets.js',
 			'/js-source/storage.js',
@@ -58,10 +59,18 @@ class Webform extends CI_Controller {
 		$sub = get_subdomain();
 		$suf = $this->Survey_model->ONLINE_SUBDOMAIN_SUFFIX;
 		$this->subdomain = ($this->Survey_model->has_offline_launch_enabled()) ? $sub : substr($sub, 0, strlen($sub) - strlen($suf));
+		if (!empty($this->subdomain))
+		{
+			$form_props = $this->Survey_model->get_form_props();
+			$this->server_url= (isset($form_props['server_url'])) ? $form_props['server_url'] : NULL; //$this->Survey_model->get_server_url();
+			$this->form_id = (isset($form_props['form_id'])) ? $form_props['form_id'] : NULL; //$logthis->Survey_model->get_form_id();
+			$this->form_hash = (isset($form_props['hash'])) ? $form_props['hash'] : NULL; //$this->Survey_model->get_form_
+		}
 	}
 
 	public function index()
 	{
+		
 		if (isset($this->subdomain))
 		{
 			//if ($this->Survey_model->is_live_survey($subdomain))
@@ -71,8 +80,6 @@ class Webform extends CI_Controller {
 			}	
 
 			$offline = $this->Survey_model->has_offline_launch_enabled();
-			$this->server_url= $this->Survey_model->get_server_url();
-			$this->form_id = $this->Survey_model->get_form_id();
 			$form = $this->_get_form();
 
 			if ($form === FALSE)
@@ -86,11 +93,13 @@ class Webform extends CI_Controller {
 			
 			$data = array(
 				'manifest'=> ($offline) ? '/manifest/html/webform' : NULL, 
-				'title_component'=>'webform', 
-				'html_title'=>$form->title,
+				'title_component' => 'webform', 
+				'html_title' => $form->title,
 				'form'=> $form->html,
 				'form_data'=> $form->default_instance,
-				'stylesheets'=> $this->default_stylesheets
+				'stylesheets'=> $this->default_stylesheets,
+				'server_url' => $this->server_url,
+				'form_id' => $this->form_id
 			);
 
 			if (ENVIRONMENT === 'production')
@@ -118,7 +127,7 @@ class Webform extends CI_Controller {
 					)
 				);
 			}
-			$this->output->enable_profiler(FALSE);
+			//$this->output->enable_profiler(FALSE);
 			$this->load->view('webform_view', $data);
 		}
 		else 
@@ -171,8 +180,6 @@ class Webform extends CI_Controller {
 	          instance id " . $instance_id, 404);
 	    }
 
-		$this->server_url= $this->Survey_model->get_server_url();
-		$this->form_id = $this->Survey_model->get_form_id();
 		$form = $this->_get_form();
 
 		if ($form === FALSE)
@@ -244,8 +251,6 @@ class Webform extends CI_Controller {
 			return show_error('The edit view can only be launched in offline mode', 404);
 		}
 	    
-		$this->server_url= $this->Survey_model->get_server_url();
-		$this->form_id = $this->Survey_model->get_form_id();
 		$form = $this->_get_form();
 
 		if ($form === FALSE)
@@ -296,9 +301,9 @@ class Webform extends CI_Controller {
 	{
 		extract($_GET);
 
-		if (empty($server) || empty($id))
+		if ((empty($server) || empty($id)) && empty($form))
 		{
-			show_error('Preview requires server url and form id variables.', 404);
+			show_error('Preview requires server url and form id variables or a form url variable.', 404);
 			return;
 		}
 		if (isset($this->subdomain))
@@ -343,28 +348,57 @@ class Webform extends CI_Controller {
 	{
 		if (!isset($this->form_id) || !isset($this->server_url))
 		{
+			log_message('error', 'no form_id and/or server_url');
 			return FALSE;
 		}
-
 		$this->load->model('Form_model', '', TRUE);
-		$transf_result = $this->Form_model->transform($this->server_url, $this->form_id, FALSE);
-		
-		$title = $transf_result->form->xpath('//h3[@id="form-title"]');
-		$form = new stdClass();
-		$form->title = (!empty($title[0])) ? $title[0] : '';
 
-		$form->html = $transf_result->form->asXML();
+		if ($this->Form_model->content_unchanged($this->server_url, $this->form_id, $this->form_hash) 
+			&& $this->Form_model->stylesheets_unchanged())
+		{
+			log_message('debug', 'unchanged form and stylesheets, loading transformation result from database');
+			$form = $this->Survey_model->get_transform_result();
+
+			if (empty($form->title) || empty($form->html) || empty($form->default_instance))
+			{
+				log_message('error', 'failed to obtain transformation result from database for '.$this->subdomain);
+			}
+			//log_message('debug', 'loaded result: '. $form);
+		}
+		else
+		{
+			log_message('debug', 'form changed, stylesheet changed or form never transformed before, going to perform transformation');
+			$transf_result = $this->Form_model->transform($this->server_url, $this->form_id, FALSE);
+			
+			$title = $transf_result->form->xpath('//h3[@id="form-title"]');
+
+			$hash = $transf_result->hash;
+			$form = new stdClass();
+			$form->title = (!empty($title[0])) ? $title[0] : '';
+
+			$form->html = $transf_result->form->asXML();
+			
+			$form->default_instance = $transf_result->model->asXML();
+			//a later version of PHP seems to output jr:template= instead of template=
+			//$form->default_instance = str_replace(' jr:template=', ' template=', $form->default_instance);
+			//$form->default_instance = str_replace(array("\r", "\r\n", "\n", "\t"), '', $form->default_instance);
+			//$form->default_instance = preg_replace('/\/\>\s+\</', '/><', $form->default_instance);
+			//the preg replacement below is very aggressive!... maybe too aggressive
+			$form->default_instance = preg_replace('/\>\s+\</', '><', $form->default_instance);
+			$form->default_instance = json_encode($form->default_instance);
+			if (!empty($form->html) && !empty($form->default_instance))
+			{
+				$this->Survey_model->update_transform_result($form, $hash);
+				//log_message('debug', 'hash in transformation result: '. $hash);
+			}
+			//$this->Survey_model->update_hash($hash);
+		}
 		
-		$form->default_instance = $transf_result->model->asXML();
-		//a later version of PHP seems to output jr:template= instead of template=
-		//$form->default_instance = str_replace(' jr:template=', ' template=', $form->default_instance);
-		//$form->default_instance = str_replace(array("\r", "\r\n", "\n", "\t"), '', $form->default_instance);
-		//$form->default_instance = preg_replace('/\/\>\s+\</', '/><', $form->default_instance);
-		//the preg replacement below is very aggressive!... maybe too aggressive
-		$form->default_instance = preg_replace('/\>\s+\</', '><', $form->default_instance);
-		$form->default_instance = json_encode($form->default_instance);
-		
-		return (!empty($form->html) && !empty($form->default_instance)) ? $form : NULL;
+		if (!empty($form->html) && !empty($form->default_instance))
+		{
+			return $form;
+		}
+		return NULL;
 	}
 
 	private function _get_edit_obj($instance_id)
