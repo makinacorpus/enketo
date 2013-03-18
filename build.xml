@@ -7,7 +7,7 @@
   <target name="compile">
     
     <jscomp compilationLevel="simple" warning="verbose" 
-            debug="false" output="public/js-min/test-all-min.js">
+            debug="false" output="public/js-min/tester-all-min.js">
 
       <externs dir="${basedir}/src/js">
         <file name="extern.js"/>
@@ -17,7 +17,10 @@
         <file name="helpers.js"/>
         <file name="gui.js"/>
         <file name="form.js"/>
+        <file name="files.js"/>
         <file name="widgets.js"/>
+        <file name="storage.js"/>
+        <file name="survey_controls.js"/>
         <file name="formtester.js"/>
         <file name="connection.js"/>
       </sources>
@@ -54,12 +57,35 @@
         <file name="storage.js"/>
         <file name="form.js"/>
         <file name="widgets.js"/>
+        <file name="files.js"/>
         <file name="connection.js"/>
         <file name="survey_controls.js"/>
         <file name="webform.js"/>
       </sources>
 
     </jscomp>
+
+    <jscomp compilationLevel="simple" warning="verbose" 
+            debug="false" output="drishti/js/webform-drishti-all-min.js">
+      <externs dir="${basedir}/src/js">
+        <file name="extern.js"/>
+      </externs>
+      <sources dir="${basedir}/src/js">
+        <file name="helpers.js"/>
+        <file name="gui.js"/>
+        <file name="storage_drishti.js"/>
+        <file name="form.js"/>
+        <file name="widgets.js"/>
+        <file name="webform_drishti.js"/>
+      </sources>
+    </jscomp>
+    <copy file="src/js/helpers.js" todir="drishti/js/source" />
+    <copy file="src/js/gui.js" todir="drishti/js/source" />
+    <copy file="src/js/storage_drishti.js" todir="drishti/js/source" />
+    <copy file="src/js/form.js" todir="drishti/js/source" />
+    <copy file="src/js/widgets.js" todir="drishti/js/source" />
+    <copy file="src/js/webform_drishti.js" todir="drishti/js/source" />
+    <copy file="public/css/drishti.css" todir="drishti/css" />
 
      <jscomp compilationLevel="simple" warning="verbose" 
             debug="false" output="public/js-min/webform-edit-all-min.js">
@@ -73,6 +99,7 @@
         <file name="gui.js"/>
         <file name="form.js"/>
         <file name="widgets.js"/>
+        <file name="files.js"/>
         <file name="storage.js"/>
         <file name="connection.js"/>
         <file name="survey_controls.js"/>
@@ -93,6 +120,7 @@
         <file name="gui.js"/>
         <file name="form.js"/>
         <file name="widgets.js"/>
+        <file name="files.js"/>
         <file name="storage.js"/>
         <file name="connection.js"/>
         <file name="survey_controls.js"/>
@@ -113,6 +141,7 @@
         <file name="gui.js"/>
         <file name="form.js"/>
         <file name="widgets.js"/>
+        <file name="files.js"/>
         <file name="storage.js"/>
         <file name="connection.js"/>
         <file name="survey_controls.js"/>
@@ -157,7 +186,28 @@
 
     </jscomp>
 
+     <jscomp compilationLevel="simple" warning="quiet" 
+            debug="false" output="drishti/js/libraries-all-min.js">
+
+      <sources dir="${basedir}/public/libraries">
+        <file name="jquery.min.js"/>
+        <file name="bootstrap/js/bootstrap.min.js"/>
+        <file name="jdewit-bootstrap-timepicker/js/bootstrap-timepicker.js"/>
+        <file name="bootstrap-datepicker/js/bootstrap-datepicker.js"/>
+        <file name="modernizr.min.js"/>
+        <file name="xpathjs_javarosa/build/xpathjs_javarosa.min.js"/>
+        <file name="vkbeautify.js"/>
+        <file name="FileSaver.min.js"/>
+        <file name="BlobBuilder.min.js"/>
+      </sources>
+
+    </jscomp>
+
+   
+
   </target>
+
+
 
  <!-- <jsdoctoolkit jsdochome="/path/to/jsdoc_toolkit-1.4.0/" template="sunny" outputdir="/output/dir/">
     <source file="/a/js/soucefile.js" />

@@ -45,23 +45,25 @@ class Formtester extends CI_Controller {
 					'/js-source/helpers.js',
 					'/js-source/gui.js',
 					'/js-source/form.js',
+					'/js-source/storage.js',
 					'/js-source/widgets.js',
-					'/js-source/formtester.js',
+					'/js-source/survey_controls.js',
 					'/js-source/connection.js',
-					'/js-source/debug.js'
+					'/js-source/debug.js',
+					'/js-source/formtester.js'
 			);
 			$default_stylesheets = array
 			(
-				array( 'href' => '/css/styles.css', 'media' => 'all'),
-				array( 'href' => '/css/print.css', 'media' => 'print')
+				array( 'href' => '/css/formtester.css', 'media' => 'all'),
+				array( 'href' => '/css/webform_print.css', 'media' => 'print')
 			);
 
 			if (ENVIRONMENT === 'production')
 			{
 				$data['scripts'] = array
 				(
-					'libraries/libraries-all-min.js',
-					'js-min/test-all-min.js'
+					'/libraries/libraries-all-min.js',
+					'/js-min/tester-all-min.js'
 				);
 			}
 			else

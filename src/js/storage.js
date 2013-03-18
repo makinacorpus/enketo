@@ -22,7 +22,7 @@
  */
 function StorageLocal(){
 	"use strict";
-	var RESERVED_KEYS = ['__settings', 'null','__history', 'Firebug', 'undefined', '__bookmark', '__counter', '__current_server'],
+	var RESERVED_KEYS = ['__settings', 'null','__history', 'Firebug', 'undefined', '__bookmark', '__counter', '__current_server', '__loadLog'],
 		localStorage = window.localStorage;
 
 	this.init = function() {
@@ -95,7 +95,7 @@ function StorageLocal(){
 			return 'success';
 		}
 		catch(e){
-			if (e.name === 'QUOTA_EXCEEDED_ERR'){
+			if (e.code === 22){//} (e.name==='QUOTA_EXCEEDED_ERR'){
 				return 'full';
 			}
 			console.log('error in store.setRecord:'+e.message, e);
@@ -213,7 +213,7 @@ function StorageLocal(){
 	 * [getSurveyDataArr description]
 	 * @param  {boolean=} finalOnly   [description]
 	 * @param  {?string=} excludeName the (currently open) record name to exclude from the returned data set
-	 * @return {Array.<Object.<string, string>>}             [description]
+	 * @return {Array.<{name: string, data: string}>}             [description]
 	 */
 	this.getSurveyDataArr = function(finalOnly, excludeName){
 		var i, records,

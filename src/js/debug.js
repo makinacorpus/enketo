@@ -47,10 +47,13 @@ function setDebugEventHandlers(){
 			$(elDOM).on(ev, handler);//function(e, a, b, c){
 		}
 	}
-	function handler(e, a){
-		console.log(e.type + ' event was triggered with param: '+ a, e);
+	function handler(e, a, b){
+		console.log(e.type + ' event was triggered with param: '+ a, b, e);
 	}
 }
+
+var xpathEvalTime = 0;
+var xpathEvalNum = 0;
 
 // helper function to set up and close test by removing and returning all survey data in localStorage
 

@@ -47,14 +47,15 @@ class Webform extends CI_Controller {
 			'/js-source/form.js',
 			'/js-source/widgets.js',
 			'/js-source/storage.js',
+			'/js-source/files.js',
 			'/js-source/connection.js',
 			'/js-source/survey_controls.js',
 			'/js-source/debug.js'
 		);
 		$this->default_stylesheets = array
 		(
-			array( 'href' => '/css/styles.css', 'media' => 'all'),
-			array( 'href' => '/css/print.css', 'media' => 'print')
+			array( 'href' => '/css/webform.css', 'media' => 'all'),
+			array( 'href' => '/css/webform_print.css', 'media' => 'print')
 		);
 		$sub = get_subdomain();
 		$suf = $this->Survey_model->ONLINE_SUBDOMAIN_SUFFIX;
@@ -65,6 +66,7 @@ class Webform extends CI_Controller {
 			$this->server_url= (isset($form_props['server_url'])) ? $form_props['server_url'] : NULL; //$this->Survey_model->get_server_url();
 			$this->form_id = (isset($form_props['form_id'])) ? $form_props['form_id'] : NULL; //$logthis->Survey_model->get_form_id();
 			$this->form_hash = (isset($form_props['hash'])) ? $form_props['hash'] : NULL; //$this->Survey_model->get_form_
+			$this->xsl_version_last = (isset($form_props['xsl_version'])) ? $form_props['xsl_version'] : NULL; //$this->Survey_model->get_form_
 		}
 	}
 
@@ -238,7 +240,7 @@ class Webform extends CI_Controller {
 		
 		if (!isset($this->subdomain))
 		{
-			show_error('Edit view should be launched from survey subdomain', 404);
+			show_error('Iframe view should be launched from a survey subdomain', 404);
 			return;
 		}
 		if (!$this->Survey_model->is_launched_survey())
@@ -248,7 +250,7 @@ class Webform extends CI_Controller {
 		}
 		if ($this->Survey_model->has_offline_launch_enabled())
 		{
-			return show_error('The edit view can only be launched in offline mode', 404);
+			return show_error('The iframe view can only be launched in offline mode', 404);
 		}
 	    
 		$form = $this->_get_form();
@@ -352,9 +354,10 @@ class Webform extends CI_Controller {
 			return FALSE;
 		}
 		$this->load->model('Form_model', '', TRUE);
+		$stylesheets_new_version = $this->Form_model->stylesheets_changed($this->xsl_version_last);
 
 		if ($this->Form_model->content_unchanged($this->server_url, $this->form_id, $this->form_hash) 
-			&& $this->Form_model->stylesheets_unchanged())
+			&&  !$stylesheets_new_version)
 		{
 			log_message('debug', 'unchanged form and stylesheets, loading transformation result from database');
 			$form = $this->Survey_model->get_transform_result();
@@ -388,7 +391,7 @@ class Webform extends CI_Controller {
 			$form->default_instance = json_encode($form->default_instance);
 			if (!empty($form->html) && !empty($form->default_instance))
 			{
-				$this->Survey_model->update_transform_result($form, $hash);
+				$this->Survey_model->update_transform_result($form, $hash, $stylesheets_new_version);
 				//log_message('debug', 'hash in transformation result: '. $hash);
 			}
 			//$this->Survey_model->update_hash($hash);

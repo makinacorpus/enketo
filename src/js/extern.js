@@ -1,6 +1,9 @@
-var jrDataStr, jrDataStrToEdit;
+var jrDataStr, jrDataStrToEdit,
+	/*@type {{string:{html_form:string, xml_model:string}}}*/mockForms1,
+	/*@type {{string:{html_form:string, xml_model:string}}}*/mockForms2,
+	mockInstances;
 
-/** @type {{returnURL: string, serverURL: string, formId: string, formURL: string, mapsStaticAPIKey:string, mapsDynamicAPIKey:string,
+/** @type {{returnURL: string, serverURL: string, formId: string, instanceId: string, formURL: string, mapsStaticAPIKey:string, mapsDynamicAPIKey:string,
 	 defaultServerURLHelper:string, supportEmail:string, modernBrowsersURL:string, showBranch:boolean}}
  */
 var settings;
@@ -10,12 +13,20 @@ var settings;
  */
 applicationCache.OBSOLETE;
 
+window.webkitResolveLocalFileSystemURL = function(){};
+
+
 function vkbeautify(){}
 
 /**
  * @param {?string} str
  */
 vkbeautify.xml = function(str){};
+/**
+ * @param {?string} str
+ */
+vkbeautify.json = function(str){};
+
 
 function history(){}
 /**
@@ -140,7 +151,7 @@ console.dir = function(value) {};
 console.dirxml = function(var_args) {};
 
 /**
- * @param {*} value
+ * @param {*=} value
  */
 console.trace = function(value) {};
 

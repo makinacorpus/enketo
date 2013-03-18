@@ -1,0 +1,10 @@
+$iconSpritePath: '/images/glyphicons-halflings.png'; //patches bug in bootstrap-sass
+$iconWhiteSpritePath: '/images/glyphicons-halflings-white.png'; //patches bug in bootstrap-sass
+
+@import "_main";
+@import "_menu";
+
+#refresh-list{
+    float: right;
+    margin: -2px -14px 0 14px;
+    width: 60px; }

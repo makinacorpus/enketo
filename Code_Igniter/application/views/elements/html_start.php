@@ -11,8 +11,16 @@
 			( !empty($title_component) ? 'enketo - '.$title_component : 'enketo' ); 
 		?></title>
 		
-		<link rel="icon" type="image/png" href="/images/favicon.png">
-		
+		<link rel="shortcut icon" href="/images/enketo.ico">
+		<!-- For third-generation iPad with high-resolution Retina display: -->
+		<link rel="apple-touch-icon-precomposed" sizes="144x144" href="/images/icon_144x144.png">
+		<!-- For iPhone with high-resolution Retina display: -->
+		<link rel="apple-touch-icon-precomposed" sizes="114x114" href="/images/icon_114x114.png">
+		<!-- For first- and second-generation iPad: -->
+		<link rel="apple-touch-icon-precomposed" sizes="72x72" href="/images/icon_72x72.png">
+		<!-- For non-Retina iPhone, iPod Touch, and Android 2.1+ devices: -->
+		<link rel="apple-touch-icon-precomposed" href="/images/icon_57x57.png">
+
 		<meta charset="utf-8" />
 		<meta name="author" content="Martijn van de Rijdt (Aid Web Solutions)" />
 		<meta name="copyright" content="2012 (c) Martijn van de Rijdt"/>
@@ -20,7 +28,7 @@
 		<meta name="robots" content="<?= $robots ?>"/>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
-		<!--[if lt IE 8]>
+		<!--[if lt IE 9]>
         	<script type="text/javascript">window.location = 'modern_browsers';</script>
 		<![endif]-->
 <? foreach ($stylesheets as $css): ?>

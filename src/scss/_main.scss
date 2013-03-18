@@ -1,0 +1,217 @@
+$baseFontSize: 16px;
+$baseLineHeight: 20px;
+
+@import "bootstrap";
+//@import "bootstrap-responsive";
+
+@import "_variables";
+@import "_mixins";
+
+/** BOOTSTRAP PLUGINS **/
+@import "../../public/libraries/jdewit-bootstrap-timepicker/timepicker";
+@import "../../public/libraries/datepicker";
+
+/*@font-face{
+  font-family: 'Open Sans';
+  src: local('☺'),
+        url('fonts/OpenSans-Regular.ttf') format('truetype');
+}*/
+@font-face {
+    font-family: 'OpenSansRegular';
+    src: url('fonts/OpenSans-Regular-webfont.woff') format('woff'),
+         url('fonts/OpenSans-Regular-webfont.ttf') format('truetype'),
+         url('fonts/http://widgets.enketo-dev.formhub.org/webformOpenSans-Regular-webfont.svg#OpenSansRegular') format('svg');
+    font-weight: normal;
+    font-style: normal;}
+
+//additional icons
+.icon-crosshairs{
+  background-image: url("../images/crosshairs.png");
+  background-position: -5px -5px;
+}
+
+body{
+  font-family: 'OpenSansRegular', Helvetica, Arial, sans-serif;
+  background: $bg url(../images/tex2res2.png) repeat;
+  font-size: $baseFontSize;
+  line-height: $baseLineHeight;
+  overflow-x: hidden;
+  .main article{
+    padding: 3em;}
+  .form-header{
+    position:absolute;
+    top: -4.4em;
+    border: none; } }
+
+@media screen and (max-width: 720px){
+  @include small-screen-paddings;
+  body{
+    background: none;    
+    .main{ 
+      margin: 0;}
+    .form-header{
+      top: 0;
+      border-bottom: 1px solid $groupline;
+      .form-language-selector > span{
+        display: none; } }
+    #page .close{
+      font-size: 2em; } } }
+
+@media screen and (max-width: 600px){
+  @include small-screen-paddings;
+  body{
+    background: none;
+    //@include font-sizes($baseFontSize, 1.05);
+    line-height: 1.05 * $baseLineHeight;
+    .main{ 
+      margin: 0;
+      article{
+        padding: 3em 2em 2em 2em; } }
+    #page .close{
+      font-size: 3em; } } }
+
+@media screen and (max-width: 400px){
+  @include small-screen-paddings;
+  body{
+    background: none;
+    //@include font-sizes($baseFontSize, 1.09);
+    line-height: 1.09 * $baseLineHeight;
+    .main{ 
+      margin: 0;
+      article{
+        padding: 3em 1em 1em 1em; } }
+    #page .close{
+      font-size: 4em; }
+    .form-header .form-language-selector{
+      border-right: none; }
+    button.print{
+      display: none; } } }
+
+h2, h3, h4 {
+  color: $title;
+  text-align: center;}
+
+.preview{
+  color: #aaaaaa;
+  margin: 1.5em 0 -1em 0;
+}
+
+progress{
+  display: block;
+  margin: 10px auto;}
+
+.alert{
+  .error-list{
+    margin-top: 1em;
+    font-size: 0.8em;
+    li{
+      line-height: 1.4em; } }
+  strong{
+  text-decoration: underline;} }
+
+
+
+.overlay{
+  position:absolute;
+  top:0;
+  left:0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  background: black;
+  opacity: 0.8;
+  display: none;
+}
+
+.paper{
+	background-color: #fff;
+	border-radius: 7px;
+	border: 7px solid $content_border;}
+
+.main {
+  margin: 100px auto 60px auto;
+  position: relative;
+  display: block;
+  text-align: left; 
+  max-width: $content-width;
+  article {
+    //padding: 50px;
+    min-height: 300px; }
+  ul.nav-tabs{
+      margin: 20px 0 0 0;
+      li{
+        margin: 0;
+        a{
+          background: none; } } } }
+
+.formlist{
+  ul{
+    padding: 0; 
+    margin: 0;
+    list-style: none;
+    li {
+      margin: 10px 0;} }
+  img{
+    display: none; }
+  &.empty{
+    img{ 
+      width: 80%;
+      display: block;
+      margin: 40% auto; }
+    p:not(.alert-error){
+      display: none;} } }
+
+.hint{
+  display: inline-block;
+  margin-left: 5px;
+}
+
+.self-destruct-timer{
+  float: left;
+  margin-top: 5px;
+  color: $shadow; }
+
+.tooltip{
+  opacity: 1 !important;
+  /* fix for tooltips when places inside a label/legend element (All)*/
+  font-weight: normal !important;
+  /* fix for tooltips when placed inside a legend element (Safari)*/
+  line-height: 18px !important;}
+
+//this fixes an inherit bug in bootstrap. It can probably be removed after v2.3.
+.popover{
+  font-size: $baseFontSize !important;
+  color: black !important;
+  min-width: 30%; }
+
+.page-break{
+  display: none; }
+
+#feedback-bar {
+  @include transition-slow;
+  @include border-box;
+  @include radius-zero;
+  position: fixed;
+  z-index: 13;
+  top: -100px;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 35px;
+  height: auto;
+  p {
+    position: relative;
+    margin: 0 50px;
+    text-align: center;
+    padding: .6em 0;
+    font-size: 1.1em;
+    &+p {
+      border-top: 1px #ddd dashed; } }
+  i, .close {
+    position: absolute;
+    top: 50%;
+    margin-top: -8px; }
+  i {
+    left: 20px; }
+  .close {
+    right: 20px; } }
