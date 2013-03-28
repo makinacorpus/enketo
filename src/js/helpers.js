@@ -30,13 +30,51 @@ function Profiler(taskName){
 	};
 }
 
+/**
+ * splits an array of file sizes into batches (for submission) based on a limit
+ * @param  {Array.<number>}	fileSizes	array of file sizes
+ * @param  {number}		limit	limit in byte size of one chunk (can be exceeded for a single item)
+ * @return {Array.<Array.<number>>}	array of arrays with index, each secondary array of indices represents a batch
+ */
+function divideIntoBatches(fileSizes, limit){
+	var i, j, batch, batchSize,
+		sizes = [],
+		batches = [];
+	//limit = limit || 5 * 1024 * 1024;
+	for (i=0; i<fileSizes.length ; i++){
+        sizes.push({'index': i, 'size': fileSizes[i]});
+    }
+	while( sizes.length > 0){
+		batch = [sizes[0].index];
+		batchSize = sizes[0].size;
+		if (sizes[0].size < limit){
+			for (i = 1; i<sizes.length; i++){
+				if (( batchSize + sizes[i].size) < limit){
+					batch.push(sizes[i].index);
+					batchSize += sizes[i].size;
+				}
+			}
+		}
+        batches.push(batch);
+		for (i=0; i<sizes.length; i++){
+			for (j=0; j<batch.length; j++){
+				if (sizes[i].index === batch[j]){
+					sizes.splice(i, 1);
+				}
+			}
+		}
+	}
+	return batches;
+}
+
+
 window.onload = function(){
 	setTimeout(function(){
 		var loadLog,
 			t = window.performance.timing,
 			loadingTime = t.loadEventEnd - t.responseEnd,
 			exLog = /**@type {string} */window.localStorage.getItem('__loadLog');
-		if (settings.debug){
+		if (typeof settings !== 'undefined' && settings.debug){
 			loadLog = (exLog) ? JSON.parse(exLog) : [];
 			loadLog.push(loadingTime);
 			if (loadLog.length > 10){
@@ -52,6 +90,36 @@ window.onload = function(){
 
 (function($){
 	"use strict";
+
+	 /**
+     * Creates an XPath from a node (currently not used inside this Class (instead FormHTML.prototype.generateName is used) but will be in future);
+     * @param  {string=} rootNodeName	if absent the root is #document
+     * @return {string}                 XPath
+     */
+    $.fn.getXPath = function(rootNodeName){
+		//other nodes may have the same XPath but because this function is used to determine the corresponding input name of a data node, index is not included 
+		var position,
+			$node = this.first(),
+			nodeName = $node.prop('nodeName'),
+			//$sibSameNameAndSelf = $node.siblings(nodeName).addBack(),
+			steps = [nodeName], 
+			$parent = $node.parent(),
+			parentName = $parent.prop('nodeName');
+
+		//position = ($sibSameNameAndSelf.length > 1) ? '['+($sibSameNameAndSelf.index($node)+1)+']' : '';
+		//steps.push(nodeName+position);
+
+		while ($parent.length == 1 && parentName !== rootNodeName && parentName !== '#document'){
+			//$sibSameNameAndSelf = $parent.siblings(parentName).addBack();
+			//position = ($sibSameNameAndSelf.length > 1) ? '['+($sibSameNameAndSelf.index($parent)+1)+']' : '';
+			//steps.push(parentName+position);
+			steps.push(parentName);
+			$parent = $parent.parent();
+			parentName = $parent.prop('nodeName');
+		}
+		return '/'+steps.reverse().join('/');
+	};
+
 	// give a set of elements the same (longest) width
 	$.fn.toLargestWidth = function(plus){
 		var largestWidth = 0;

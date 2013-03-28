@@ -40,6 +40,7 @@ function Form (formSelector, dataStr, dataStrToEdit){
 	this.Data = function(dataStr){return new DataXML(dataStr);};
 	this.getDataO = function(){return data;};
 	this.getDataEditO = function(){return dataToEdit.get();};
+	this.getInstanceID = function(){return data.getInstanceID();};
 	this.Form = function(selector){return new FormHTML(selector);};
 	this.getFormO = function(){return form;};
 	//this.getDataXML = function(){return data.getXML();};
@@ -789,7 +790,7 @@ function Form (formSelector, dataStr, dataStrToEdit){
 	/**
 	 * Obtains a cleaned up string of the data instance(s)
 	 * @param  {boolean=} incTempl indicates whether repeat templates should be included in the return value (default: false)
-	 * @param  {boolean=} incNs    indicates whether namespaces should be included in return value (default: false)
+	 * @param  {boolean=} incNs    indicates whether namespaces should be included in return value (default: true)
 	 * @param  {boolean=} all	  indicates whether all instances should be included in the return value (default: false)
 	 * @return {string}           XML string
 	 */
@@ -802,7 +803,8 @@ function Form (formSelector, dataStr, dataStrToEdit){
 
 		$docRoot = (all) ? this.$.find(':first') : this.node('> :first').get();
 		
-		$dataClone = $('<root></root');
+		//this should be refactored. Using <root> is not necessary.
+		$dataClone = $('<root></root>');
 		
 		$docRoot.clone().appendTo($dataClone);
 
@@ -1310,8 +1312,9 @@ function Form (formSelector, dataStr, dataStrToEdit){
 				type = this.getInputType($inputNodes.eq(0)); 
 				
 				if ( type === 'file'){
-					console.error('Cannot set value of file input field (value: '+value+'). If trying to load '+
-						'this record for editing this file input field will remain unchanged.');
+					$inputNodes.eq(0).attr('data-loaded-file-name', value);
+					//console.error('Cannot set value of file input field (value: '+value+'). If trying to load '+
+					//	'this record for editing this file input field will remain unchanged.');
 					return false;
 				}
 
@@ -1719,7 +1722,8 @@ function Form (formSelector, dataStr, dataStrToEdit){
 		//TODO: test with very large itemset
 		var that = this,
 			cleverSelector = [],
-			needToUpdateLangs = false;
+			needToUpdateLangs = false,
+			itemsCache = {};
 
 		if (typeof changedDataNodeNames == 'undefined'){
 			cleverSelector = ['.itemset-template'];
@@ -1733,7 +1737,7 @@ function Form (formSelector, dataStr, dataStrToEdit){
 		cleverSelector = cleverSelector.join(',');
 		
 		$form.find(cleverSelector).each(function(){
-			var $htmlItem, $htmlItemLabels, value, 
+			var $htmlItem, $htmlItemLabels, value, $instanceItems,
 				$template = $(this),
 				newItems = {},
 				prevItems = $template.data(),
@@ -1742,8 +1746,16 @@ function Form (formSelector, dataStr, dataStrToEdit){
 				itemsXpath = $template.attr('data-items-path'),
 				labelType = $labels.attr('data-label-type'),
 				labelRef = $labels.attr('data-label-ref'),
-				valueRef = $labels.attr('data-value-ref'),
+				valueRef = $labels.attr('data-value-ref');
+
+			if (typeof itemsCache[itemsXpath] !== 'undefined'){
+				console.debug('using cached itemset items result for '+itemsXpath);
+				$instanceItems = itemsCache[itemsXpath];
+			}
+			else{
 				$instanceItems = data.evaluate(itemsXpath, 'nodes');
+				itemsCache[itemsXpath] = $instanceItems;
+			}
 
 			// this property allows for more efficient 'itemschanged' detection
 			newItems.length = $instanceItems.length; 
@@ -1987,6 +1999,7 @@ function Form (formSelector, dataStr, dataStrToEdit){
 				this.selectWidget();
 			}
 			else{
+				this.mobileSelectWidget();
 				this.touchRadioCheckWidget();
 			}
 			this.geopointWidget();
@@ -2163,6 +2176,24 @@ function Form (formSelector, dataStr, dataStrToEdit){
 				});
 			}
 		},
+		mobileSelectWidget : function(){
+			var showSelectedValues = function($select){
+				var values = $select.val(),
+					valueText = [];
+				console.log('mobileSelectWidget change event detected, values selected: ', values);
+				for (var i = 0; i < values.length ; i++){
+					valueText.push($(this).find('option[value="'+values[i]+'"]').text());
+				}
+				$select.siblings('.widget.mobileselect').remove();
+				$select.after('<span class="widget mobileselect">'+values.join(', ')+'</span>');
+			};
+			$form.on('change', 'select[multiple]', function(){
+				showSelectedValues($(this));
+				return true;
+			});
+			//show defaults
+			$form.find('select[multiple]').each(function(){showSelectedValues($(this));});
+		},
 		//transforms triggers to page-break elements //REMOVE WHEN NIGERIA FORMS NO LONGER USE THIS
 		pageBreakWidget : function(){
 			if (!this.repeat){
@@ -2283,10 +2314,11 @@ function Form (formSelector, dataStr, dataStrToEdit){
 								fileManager.deleteFile(prevFileName);
 							}
 
-							$input.siblings('.file-feedback, .file-preview').remove();
+							$input.siblings('.file-feedback, .file-preview, .file-loaded').remove();
 
 							console.debug('file: ', file);
-							if (file && file.size > 0){
+							if (file && file.size > 0 && file.size <= connection.maxSubmissionSize()){
+								console.debug('going to save it in filesystem');
 								fileManager.saveFile(
 									file,
 									{
@@ -2297,7 +2329,7 @@ function Form (formSelector, dataStr, dataStrToEdit){
 										error: function(e){
 											console.error('error: ',e);
 											$input.val('');
-											$input.after('<span class="file-feedback text-error">'+
+											$input.after('<div class="file-feedback text-error">'+
 													'Failed to save file</span>');
 										}
 									}
@@ -2306,11 +2338,19 @@ function Form (formSelector, dataStr, dataStrToEdit){
 							}
 							//clear instance value by letting it bubble up to normal change handler
 							else{
+								if (file.size > connection.maxSubmissionSize()){
+									$input.after('<div class="file-feedback text-error">'+
+										'File too large (max '+
+										(Math.round((connection.maxSubmissionSize() * 100 )/ (1024 * 1024)) / 100 )+
+										' Mb)</div>');
+								}
 								return true;
 							}
 						}).removeClass('ignore')
 							.removeAttr('disabled')
 							.siblings('.file-feedback').remove();
+						$fileInputs.after('<div class="text-info">'+
+							'File inputs are experimental. Use only for testing.');
 					},
 					error: function(){
 						$fileInputs.siblings('.file-feedback').remove();
@@ -2322,8 +2362,14 @@ function Form (formSelector, dataStr, dataStrToEdit){
 
 				$fileInputs.each(function(){
 					var $input = $(this),
-						fileName = ($input[0].files.length > 0) ? $input[0].files[0].name : '';
-					$input.attr('data-previous-file-name', fileName);
+						existingFileName = $input.attr('data-loaded-file-name');
+					if (existingFileName){
+						$input.after('<div class="file-loaded text-warning">This form was loaded with "'+
+							existingFileName+'". To preserve this file, do not change this input.</div>');
+					}
+						//fileName = ($input[0].files.length > 0) ? $input[0].files[0].name : '';
+					//is this required at all?
+					//$input.attr('data-previous-file-name', fileName);
 				}).parent().addClass('with-media clearfix');
 
 				fileManager.init(data.getInstanceID(), callbacks);
@@ -2584,6 +2630,7 @@ function Form (formSelector, dataStr, dataStrToEdit){
 		 * @return  {boolean}       [description]
 		 */
 		clone : function($node, animate){
+			//var p = new Profiler('repeat cloning');
 			var $master, $clone, $parent, index, radioNames, i, path, timestamp, duration,
 				that = this;
 			duration = (animate === false) ? 0 : 400;
@@ -2609,12 +2656,14 @@ function Form (formSelector, dataStr, dataStrToEdit){
 				.parent('.jr-group').numberRepeats();
 
 			//if not done asynchronously, this code causes a style undefined exception in Jasmine unit tests with jQuery 1.9 and 2.0
-			setTimeout(function(){
-				$clone.hide().clearInputs('').show(duration, function(){
+			//but this breaks loading of default values inside repeats
+			//this is caused by show() not being able to find the 'property "style" of undefined'
+			//setTimeout(function(){
+				$clone.clearInputs('');//.show(duration, function(){
 					//re-initiate widgets in clone
 					that.formO.widgets.init($clone);
-				});
-			}, 0);
+				//});
+			//}, 0);
 
 			//note: in http://formhub.org/formhub_u/forms/hh_polio_survey_cloned/form.xml a parent group of a repeat
 			//has the same ref attribute as the nodeset attribute of the repeat. This would cause a problem determining 
@@ -2653,6 +2702,7 @@ function Form (formSelector, dataStr, dataStrToEdit){
 			}
 
 			$form.trigger('changerepeat'); 
+			//p.report();
 			return true;
 		},
 		remove : function(node){
@@ -3085,33 +3135,5 @@ Date.prototype.toISOLocalString = function(){
             return this.find(selector);
     };
 
-
-    /**
-     * Creates an XPath from a node (currently not used inside this Class (instead FormHTML.prototype.generateName is used) but will be in future);
-     * @param  {string=} rootNodeName	if absent the root is #document
-     * @return {string}                 XPath
-     */
-    $.fn.getXPath = function(rootNodeName){
-		//other nodes may have the same XPath but because this function is used to determine the corresponding input name of a data node, index is not included 
-		var position,
-			$node = this.first(),
-			nodeName = $node.prop('nodeName'),
-			$sibSameNameAndSelf = $node.siblings(nodeName).addBack(),
-			steps = [], 
-			$parent = $node.parent(),
-			parentName = $parent.prop('nodeName');
-
-		position = ($sibSameNameAndSelf.length > 1) ? '['+($sibSameNameAndSelf.index($node)+1)+']' : '';
-		steps.push(nodeName+position);
-
-		while ($parent.length == 1 && parentName !== rootNodeName && parentName !== '#document'){
-			$sibSameNameAndSelf = $parent.siblings(parentName).addBack();
-			position = ($sibSameNameAndSelf.length > 1) ? '['+($sibSameNameAndSelf.index($parent)+1)+']' : '';
-			steps.push(parentName+position);
-			$parent = $parent.parent();
-			parentName = $parent.prop('nodeName');
-		}
-		return '/'+steps.reverse().join('/');
-	};
 
 })(jQuery);
